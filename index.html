@@ -1,78 +1,304 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Elite Living Announcements</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
-    body {
-      margin: 0;
+    body{
+      margin:0;
       font-family: Arial, sans-serif;
       background: linear-gradient(90deg, #0a0a0a 0%, #101820 30%, #041b4d 70%, #276bff 100%);
-      color: white;
-      padding: 40px 20px;
+      color:#fff;
+      padding:40px 16px;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 40px;
+    h1{
+      text-align:center;
+      margin:0 0 18px 0;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: 0.2px;
     }
 
-    .post {
-      background: #000;
-      padding: 25px;
-      border-radius: 12px;
-      margin-bottom: 30px;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
+    /* top controls bar */
+    .controls{
+      max-width: 980px;
+      margin: 0 auto 22px auto;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 260px 140px;
+      gap: 12px;
+      align-items: center;
+      backdrop-filter: blur(10px);
     }
 
-    .post h2 {
-      margin-top: 0;
-    }
-
-    .meta {
+    .input, .select{
+      width: 100%;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(10,10,10,0.6);
+      color: #fff;
+      padding: 0 12px;
+      outline: none;
       font-size: 14px;
-      color: #ccc;
-      margin-bottom: 15px;
     }
 
-    .post img {
-      max-width: 100%;
-      border-radius: 12px;
-      margin-top: 15px;
-    }
-
-    .btn {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 8px 16px;
+    .btn{
+      height: 44px;
+      border: none;
+      border-radius: 10px;
       background: #276bff;
-      color: white;
-      text-decoration: none;
-      border-radius: 6px;
-      font-size: 14px;
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s ease;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+    }
+    .btn:hover{ opacity: 0.9; transform: translateY(-1px); }
+
+    /* list wrapper */
+    .list{
+      max-width: 980px;
+      margin: 0 auto;
     }
 
-    .btn:hover {
-      opacity: 0.85;
+    /* row card layout like "Local Posts" */
+    .row{
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      gap: 16px;
+      background: #000;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .thumb{
+      width: 180px;
+      height: 120px;
+      background: rgba(255,255,255,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+    }
+
+    .thumb img{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display:block;
+    }
+
+    .content{
+      padding: 14px 14px 14px 0;
+    }
+
+    .title{
+      margin: 0 0 6px 0;
+      font-size: 18px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    .meta{
+      font-size: 13px;
+      color: #cfcfcf;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .desc{
+      font-size: 14px;
+      color: #efefef;
+      margin: 0;
+      line-height: 1.45;
+      white-space: pre-wrap;
+    }
+
+    .actions{
+      margin-top: 10px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: rgba(39,107,255,0.16);
+      border: 1px solid rgba(39,107,255,0.35);
+      color: #dbe7ff;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .linkBtn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(39,107,255,0.18);
+      border: 1px solid rgba(39,107,255,0.40);
+      color: #fff;
+      text-decoration:none;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .linkBtn:hover{ opacity: 0.9; }
+
+    .empty{
+      max-width: 980px;
+      margin: 40px auto 0 auto;
+      background: rgba(0,0,0,0.55);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 14px;
+      padding: 18px;
+      color: #d6d6d6;
+      text-align:center;
+    }
+
+    @media (max-width: 820px){
+      .controls{ grid-template-columns: 1fr; }
+      .row{ grid-template-columns: 1fr; }
+      .thumb{ width: 100%; height: 180px; }
+      .content{ padding: 14px; }
     }
   </style>
 </head>
 
 <body>
 
-<h1>📣 Elite Living Announcements</h1>
+  <h1>📣 Elite Living Announcements</h1>
 
-<div id="posts"></div>
+  <div class="controls">
+    <input id="searchInput" class="input" placeholder="Search posts..." />
+
+    <select id="channelSelect" class="select">
+      <option value="">All Channels</option>
+    </select>
+
+    <button id="postNowBtn" class="btn" type="button">
+      ➕ Post Now
+    </button>
+  </div>
+
+  <div id="list" class="list"></div>
+  <div id="empty" class="empty" style="display:none;">No posts match your filters.</div>
 
 <script>
+  // --- CONFIG ---
   const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y"; // keep your current one or move to Netlify env later
+  const FORM_LINK = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
 
-  fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*`, {
+  // IMPORTANT: these column names must exist in your Supabase table
+  // expected: title, date, description, location, announcer, attachment, channel, image_url, created_at
+
+  const listEl = document.getElementById("list");
+  const emptyEl = document.getElementById("empty");
+  const searchEl = document.getElementById("searchInput");
+  const channelEl = document.getElementById("channelSelect");
+  const postNowBtn = document.getElementById("postNowBtn");
+
+  postNowBtn.addEventListener("click", () => window.open(FORM_LINK, "_blank"));
+
+  let allPosts = [];
+
+  function safe(v){ return (v === null || v === undefined) ? "" : String(v); }
+
+  function buildChannels(posts){
+    const set = new Set();
+    posts.forEach(p => {
+      const c = safe(p.channel).trim();
+      if (c) set.add(c);
+    });
+
+    // reset dropdown (keep first option)
+    channelEl.innerHTML = `<option value="">All Channels</option>`;
+    [...set].sort().forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c;
+      opt.textContent = c;
+      channelEl.appendChild(opt);
+    });
+  }
+
+  function matches(post, q, channel){
+    const hay = [
+      post.title, post.description, post.location, post.announcer, post.channel
+    ].map(safe).join(" ").toLowerCase();
+
+    const qOk = !q || hay.includes(q.toLowerCase());
+    const cOk = !channel || safe(post.channel) === channel;
+    return qOk && cOk;
+  }
+
+  function render(posts){
+    listEl.innerHTML = "";
+    emptyEl.style.display = posts.length ? "none" : "block";
+
+    posts.forEach(post => {
+      const row = document.createElement("div");
+      row.className = "row";
+
+      const imgUrl = safe(post.image_url).trim();
+
+      row.innerHTML = `
+        <div class="thumb">
+          ${imgUrl ? `<img src="${imgUrl}" alt="post image" />` : `<div style="opacity:.6;font-weight:700;">No Image</div>`}
+        </div>
+
+        <div class="content">
+          <h2 class="title">${safe(post.title)}</h2>
+
+          <div class="meta">
+            📅 ${safe(post.date)}<br/>
+            📍 ${safe(post.location)}<br/>
+            👤 ${safe(post.announcer)}
+          </div>
+
+          ${safe(post.channel) ? `<div class="chip"># ${safe(post.channel)}</div>` : ``}
+
+          <p class="desc">${safe(post.description)}</p>
+
+          <div class="actions">
+            ${safe(post.attachment) ? `<a class="linkBtn" href="${safe(post.attachment)}" target="_blank">📎 Download Attachment</a>` : ``}
+          </div>
+        </div>
+      `;
+
+      listEl.appendChild(row);
+    });
+  }
+
+  function applyFilters(){
+    const q = searchEl.value.trim();
+    const channel = channelEl.value;
+    const filtered = allPosts.filter(p => matches(p, q, channel));
+    render(filtered);
+  }
+
+  searchEl.addEventListener("input", applyFilters);
+  channelEl.addEventListener("change", applyFilters);
+
+  // --- LOAD POSTS ---
+  fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*&order=created_at.desc`, {
     headers: {
       apikey: SUPABASE_ANON_KEY,
       Authorization: `Bearer ${SUPABASE_ANON_KEY}`
@@ -80,27 +306,14 @@
   })
   .then(res => res.json())
   .then(data => {
-    const container = document.getElementById('posts');
-
-    data.reverse().forEach(post => {
-      const div = document.createElement('div');
-      div.className = 'post';
-
-      div.innerHTML = `
-        <h2>${post.title || ''}</h2>
-        <div class="meta">
-          📅 ${post.date || ''} <br>
-          📍 ${post.location || ''} <br>
-          👤 ${post.announcer || ''}
-        </div>
-        <p>${post.description || ''}</p>
-        ${post.image ? `<img src="${post.image}" />` : ''}
-        ${post.link ? `<br><a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>` : ''}
-        ${post.attachment ? `<br><a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>` : ''}
-      `;
-
-      container.appendChild(div);
-    });
+    allPosts = Array.isArray(data) ? data : [];
+    buildChannels(allPosts);
+    applyFilters();
+  })
+  .catch(err => {
+    console.error(err);
+    emptyEl.style.display = "block";
+    emptyEl.textContent = "Error loading posts.";
   });
 </script>
 
