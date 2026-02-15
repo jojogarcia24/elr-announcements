@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Elite Living Announcements</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       margin: 0;
@@ -60,6 +61,7 @@
     }
   </style>
 </head>
+
 <body>
 
 <h1>📣 Elite Living Announcements</h1>
@@ -67,31 +69,39 @@
 <div id="posts"></div>
 
 <script>
-  fetch('posts.json')
-    .then(res => res.json())
-    .then(data => {
-      const container = document.getElementById('posts');
+  const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
 
-      data.reverse().forEach(post => {
-        const div = document.createElement('div');
-        div.className = 'post';
+  fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*`, {
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+    }
+  })
+  .then(res => res.json())
+  .then(data => {
+    const container = document.getElementById('posts');
 
-        div.innerHTML = `
-          <h2>${post.title}</h2>
-          <div class="meta">
-            📅 ${post.date} <br>
-            📍 ${post.location || ''} <br>
-            👤 ${post.announcer || ''}
-          </div>
-          <p>${post.description}</p>
-          ${post.image ? `<img src="${post.image}" />` : ''}
-          ${post.link ? `<br><a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>` : ''}
-          ${post.attachment ? `<br><a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>` : ''}
-        `;
+    data.reverse().forEach(post => {
+      const div = document.createElement('div');
+      div.className = 'post';
 
-        container.appendChild(div);
-      });
+      div.innerHTML = `
+        <h2>${post.title || ''}</h2>
+        <div class="meta">
+          📅 ${post.date || ''} <br>
+          📍 ${post.location || ''} <br>
+          👤 ${post.announcer || ''}
+        </div>
+        <p>${post.description || ''}</p>
+        ${post.image ? `<img src="${post.image}" />` : ''}
+        ${post.link ? `<br><a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>` : ''}
+        ${post.attachment ? `<br><a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>` : ''}
+      `;
+
+      container.appendChild(div);
     });
+  });
 </script>
 
 </body>
