@@ -396,11 +396,9 @@
 
 function pickPreviewUrl(post) {
   const candidates = [
-    post.image_url,
-    post.attachment_url,
-    post.attachment,
-    post.link
-  ].filter(Boolean);
+  post.image_url,
+  post.link
+].filter(Boolean);
 
   // Prefer image
   const img = candidates.find(u => isImage(u));
