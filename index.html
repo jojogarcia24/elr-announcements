@@ -12,7 +12,6 @@
       --card: rgba(15,18,26,0.78);
       --cardBorder: rgba(255,255,255,0.10);
       --muted: rgba(255,255,255,0.72);
-      --muted2: rgba(255,255,255,0.56);
       --text: rgba(255,255,255,0.95);
       --accent:#2f6bff;
       --accent2:#4b87ff;
@@ -244,24 +243,24 @@
     const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
     const POST_FORM_URL = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
-    
-   const DOC_FALLBACK_THUMB =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(`
-    <svg xmlns="http://www.w3.org/2000/svg" width="800" height="520">
-      <defs>
-        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stop-color="#0b0f16"/>
-          <stop offset="1" stop-color="#2f6bff"/>
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" rx="28" fill="url(#g)"/>
-      <rect x="56" y="56" width="688" height="408" rx="22" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.18)"/>
-      <text x="100" y="170" fill="white" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="46" font-weight="800">DOCUMENT</text>
-      <text x="100" y="230" fill="rgba(255,255,255,0.75)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="22">Click Download Attachment</text>
-      <text x="100" y="340" fill="rgba(255,255,255,0.55)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="18">PDF / LeadConnector doc</text>
-    </svg>
-  `);
+
+    const DOC_FALLBACK_THUMB =
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="800" height="520">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0b0f16"/>
+              <stop offset="1" stop-color="#2f6bff"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" rx="28" fill="url(#g)"/>
+          <rect x="56" y="56" width="688" height="408" rx="22" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.18)"/>
+          <text x="100" y="170" fill="white" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="46" font-weight="800">DOCUMENT</text>
+          <text x="100" y="230" fill="rgba(255,255,255,0.75)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="22">Click Download Attachment</text>
+          <text x="100" y="340" fill="rgba(255,255,255,0.55)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="18">PDF / LeadConnector doc</text>
+        </svg>
+      `);
 
     const CHANNELS = [
       "Announcement",
@@ -325,35 +324,30 @@
     }
 
     function renderMedia(url) {
-  if (!url) return `<div class="no-image">No Attachment</div>`;
+      if (!url) return `<div class="no-image">No Attachment</div>`;
 
-  const safeUrl = escapeHtml(url);
+      const safeUrl = escapeHtml(url);
 
-  // Images
-  if (isImage(url)) {
-    return `<img src="${safeUrl}" alt="Post image" />`;
-  }
+      if (isImage(url)) {
+        return `<img src="${safeUrl}" alt="Post image" />`;
+      }
 
-  // Direct PDFs (google storage, etc.)
-  if (isPDF(url)) {
-    return `
-      <iframe
-        src="${safeUrl}#toolbar=0&navpanes=0&scrollbar=0"
-        style="width:100%; height:168px; border:0; border-radius:14px; background:rgba(255,255,255,0.04);"
-        loading="lazy"
-      ></iframe>
-    `;
-  }
+      if (isPDF(url)) {
+        return `
+          <iframe
+            src="${safeUrl}#toolbar=0&navpanes=0&scrollbar=0"
+            style="width:100%; height:168px; border:0; border-radius:14px; background:rgba(255,255,255,0.04);"
+            loading="lazy"
+          ></iframe>
+        `;
+      }
 
-  // LeadConnector docs (download links often don't embed reliably)
-  if (isLeadConnectorDoc(url)) {
-    // Try to preview by opening in a new tab via fallback image card
-    return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document thumbnail" />`;
-  }
+      if (isLeadConnectorDoc(url)) {
+        return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document thumbnail" />`;
+      }
 
-  // Other file types (docx, zip, etc.)
-  return `<div class="no-image">Attachment Ready</div>`;
-}
+      return `<div class="no-image">Attachment Ready</div>`;
+    }
 
     // ====== HELPERS ======
     function isNewPost(dateStr) {
@@ -366,7 +360,6 @@
 
     function normalizeChannel(ch) {
       const s = (ch || "").trim();
-      // Fix common typo you had in SQL: "Annoucement"
       if (s.toLowerCase() === "annoucement") return "Announcement";
       return s;
     }
@@ -389,41 +382,38 @@
     }
 
     function formatTime(t) {
-      // Accepts "13:00:00" etc.
       if (!t) return "";
+      // supports "10:00:00" or "10:00"
       return String(t).slice(0,5);
     }
 
-function pickPreviewUrl(post) {
-  const candidates = [
-    post.image_url,
-    post.link
-  ].filter(Boolean);
+    // ✅ SINGLE, CLEAN VERSION (no duplicates)
+    function pickPreviewUrl(post) {
+      const candidates = [
+        post.image_url,
+        post.attachment_url,
+        post.attachment,
+        post.link
+      ].filter(Boolean);
 
-  const img = candidates.find(u => isImage(u));
-  if (img) return img;
+      const img = candidates.find(u => isImage(u));
+      if (img) return img;
 
-  const pdf = candidates.find(u => isPDF(u));
-  if (pdf) return pdf;
+      const pdf = candidates.find(u => isPDF(u));
+      if (pdf) return pdf;
 
-  return "";
-}
+      const lcd = candidates.find(u => isLeadConnectorDoc(u));
+      if (lcd) return lcd;
 
-  // Prefer image
-  const img = candidates.find(u => isImage(u));
-  if (img) return img;
+      return candidates[0] || "";
+    }
 
-  // Prefer PDF
-  const pdf = candidates.find(u => isPDF(u));
-  if (pdf) return pdf;
-
-  // Then LeadConnector docs
-  const lcd = candidates.find(u => isLeadConnectorDoc(u));
-  if (lcd) return lcd;
-
-  // Otherwise first available
-  return candidates[0] || "";
-}
+    function truthyBool(v) {
+      // handles true, "true", "t", 1, "1"
+      if (v === true) return true;
+      const s = String(v || "").toLowerCase().trim();
+      return s === "true" || s === "t" || s === "1" || s === "yes";
+    }
 
     // ====== RENDER ======
     function render() {
@@ -443,15 +433,11 @@ function pickPreviewUrl(post) {
         div.className = "post";
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
-
         const channel = normalizeChannel(post[CHANNEL_COLUMN]);
 
         const attachmentUrl = post.attachment_url || post.attachment || "";
-        const imageUrl = post.image_url || "";
-
-        // Use the first available media URL for preview (image_url takes precedence, then attachment_url)
         const previewUrl = pickPreviewUrl(post);
-const previewHtml = renderMedia(previewUrl);
+        const previewHtml = renderMedia(previewUrl);
 
         const downloadBtn = attachmentUrl
           ? `<a class="btn" href="${escapeHtml(attachmentUrl)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
@@ -461,8 +447,7 @@ const previewHtml = renderMedia(previewUrl);
           ? `<a class="btn" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">🔗 View Link</a>`
           : "";
 
-        // Event display
-        const isEvent = (post.is_event === true) || (!!post.event_start_date);
+        const isEvent = truthyBool(post.is_event) || !!post.event_start_date;
         const recurrence = (post.recurrence || "").trim();
 
         const eventLine = isEvent
@@ -478,13 +463,13 @@ const previewHtml = renderMedia(previewUrl);
               const bits = [];
               if (datePart) bits.push(`🗓️ ${escapeHtml(datePart)}`);
               if (timePart) bits.push(`⏰ ${escapeHtml(timePart)}`);
-              if (recurrence) bits.push(`🔁 ${escapeHtml(recurrence)}`);
+              if (recurrence && recurrence.toLowerCase() !== "none") bits.push(`🔁 ${escapeHtml(recurrence)}`);
 
               return bits.length ? `<span>${bits.join(" &nbsp;•&nbsp; ")}</span>` : "";
             })()
           : "";
 
-        const recurrenceBadge = isEvent && recurrence
+        const recurrenceBadge = isEvent && recurrence && recurrence.toLowerCase() !== "none"
           ? `<span class="badge secondary">${escapeHtml(recurrence)}</span>`
           : "";
 
