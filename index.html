@@ -143,6 +143,13 @@
       background: rgba(255,255,255,0.04);
     }
 
+    .thumb-link {
+      display: block;
+      text-decoration: none;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
     .no-image {
       height: 168px;
       border-radius: 14px;
@@ -315,24 +322,69 @@
       return /\.pdf(\?.*)?$/i.test(url || "");
     }
 
+    function escapeHtml(str) {
+      return (str || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function pdfThumbDataUri() {
+      // Clean PDF thumbnail (no hosting needed)
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+          <defs>
+            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stop-color="#2f6bff" stop-opacity="0.55"/>
+              <stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
+            </linearGradient>
+          </defs>
+          <rect width="900" height="560" rx="44" fill="#0b0f16"/>
+          <rect x="28" y="28" width="844" height="504" rx="36" fill="url(#g)" stroke="rgba(255,255,255,0.16)" />
+          <g fill="rgba(255,255,255,0.92)">
+            <text x="70" y="150" font-size="54" font-family="Arial" font-weight="800">PDF Attachment</text>
+            <text x="70" y="215" font-size="30" font-family="Arial" fill="rgba(255,255,255,0.75)">Tap to open / download</text>
+          </g>
+          <g transform="translate(70,270)">
+            <rect width="170" height="210" rx="22" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.18)"/>
+            <path d="M120 18h-54c-12 0-22 10-22 22v130c0 12 10 22 22 22h90c12 0 22-10 22-22V72z"
+                  fill="rgba(255,255,255,0.85)"/>
+            <path d="M120 18v54h54" fill="rgba(255,255,255,0.65)"/>
+            <rect x="38" y="150" width="94" height="30" rx="10" fill="#2f6bff"/>
+            <text x="85" y="172" text-anchor="middle" font-size="18" font-family="Arial" font-weight="900" fill="#fff">PDF</text>
+          </g>
+        </svg>
+      `.trim();
+
+      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
+    }
+
     function renderMedia(url) {
       if (!url) return `<div class="no-image">No Attachment</div>`;
 
+      const safeUrl = escapeHtml(url);
+
+      // Image: show actual preview
       if (isImage(url)) {
-        return `<img src="${url}" alt="Post image" />`;
+        return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
+          <img src="${safeUrl}" alt="Post image" loading="lazy" />
+        </a>`;
       }
 
+      // PDF: show a nice thumbnail card (always renders) + click opens the PDF
       if (isPDF(url)) {
-        return `
-          <iframe
-            src="${url}#view=FitH"
-            style="width:100%;height:160px;border:0;border-radius:12px;"
-            loading="lazy"
-          ></iframe>
-        `;
+        const thumb = pdfThumbDataUri();
+        return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
+          <img src="${thumb}" alt="PDF preview" loading="lazy" />
+        </a>`;
       }
 
-      return `<div class="no-image">Attachment Ready</div>`;
+      // Other file types
+      return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
+        <div class="no-image">Attachment Ready</div>
+      </a>`;
     }
 
     // ====== HELPERS ======
@@ -351,7 +403,8 @@
         post.description,
         post.location,
         post.announcer,
-        post[CHANNEL_COLUMN]
+        post[CHANNEL_COLUMN],
+        post.recurrence
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q.toLowerCase());
     }
@@ -379,18 +432,30 @@
         div.className = "post";
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
-        
-        // Handle file URL (image or PDF)
-        const fileUrl = post.image_url || post.attachment_url || post.attachment;
-        let imageHtml = renderMedia(fileUrl);
 
-        const attachmentBtn = post.attachment && fileUrl !== post.attachment
-          ? `<a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>`
+        // Choose media URL: prefer image_url if it’s an actual image; otherwise use attachment
+        const candidate = post.image_url || post.attachment_url || post.attachment;
+        const mediaUrl = (candidate && isImage(candidate)) ? candidate : (post.attachment || candidate);
+        const imageHtml = renderMedia(mediaUrl);
+
+        // Buttons
+        const attachmentBtn = post.attachment
+          ? `<a class="btn" href="${escapeHtml(post.attachment)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
           : "";
 
         const linkBtn = post.link
-          ? `<a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>`
+          ? `<a class="btn" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">🔗 View Link</a>`
           : "";
+
+        // Optional event fields (only show if present)
+        const eventLines = [];
+        if (post.event_start_date) eventLines.push(`📅 Event Start: ${escapeHtml(post.event_start_date)}`);
+        if (post.event_end_date) eventLines.push(`📅 Event End: ${escapeHtml(post.event_end_date)}`);
+        if (post.event_start_time) eventLines.push(`🕒 Start Time: ${escapeHtml(post.event_start_time)}`);
+        if (post.event_end_time) eventLines.push(`🕒 End Time: ${escapeHtml(post.event_end_time)}`);
+        if (post.recurrence) eventLines.push(`🔁 Recurrence: ${escapeHtml(post.recurrence)}`);
+
+        const eventMetaHtml = eventLines.map(x => `<span>${x}</span>`).join("");
 
         div.innerHTML = `
           <div class="post-inner">
@@ -400,18 +465,19 @@
 
             <div class="content-side">
               <div class="title-row">
-                <h2>${post.title || ""}</h2>
+                <h2>${escapeHtml(post.title || "")}</h2>
                 ${newBadge}
               </div>
 
               <div class="meta">
-                ${post.date ? `<span>📅 ${post.date}</span>` : ``}
-                ${post.location ? `<span>📍 ${post.location}</span>` : ``}
-                ${post.announcer ? `<span>👤 ${post.announcer}</span>` : ``}
-                ${post[CHANNEL_COLUMN] ? `<span>🏷️ ${post[CHANNEL_COLUMN]}</span>` : ``}
+                ${post.date ? `<span>📅 ${escapeHtml(post.date)}</span>` : ``}
+                ${post.location ? `<span>📍 ${escapeHtml(post.location)}</span>` : ``}
+                ${post.announcer ? `<span>👤 ${escapeHtml(post.announcer)}</span>` : ``}
+                ${post[CHANNEL_COLUMN] ? `<span>🏷️ ${escapeHtml(post[CHANNEL_COLUMN])}</span>` : ``}
+                ${eventMetaHtml}
               </div>
 
-              ${post.description ? `<p class="description">${post.description}</p>` : ``}
+              ${post.description ? `<p class="description">${escapeHtml(post.description)}</p>` : ``}
 
               <div class="btn-row">
                 ${linkBtn}
@@ -435,14 +501,23 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*&order=created_at.desc`, {
           headers: {
             apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            Accept: "application/json"
           }
         });
+
+        if (!res.ok) {
+          const txt = await res.text();
+          console.error("Supabase error:", res.status, txt);
+          postsContainer.innerHTML = `<div class="empty">Couldn’t load posts. (API error)</div>`;
+          return;
+        }
 
         const data = await res.json();
         allPosts = Array.isArray(data) ? data : [];
         render();
       } catch (e) {
+        console.error(e);
         postsContainer.innerHTML = `<div class="empty">Couldn’t load posts. (API error)</div>`;
       }
     }
