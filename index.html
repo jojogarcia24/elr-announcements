@@ -396,9 +396,18 @@
 
 function pickPreviewUrl(post) {
   const candidates = [
-  post.image_url,
-  post.link
-].filter(Boolean);
+    post.image_url,
+    post.link
+  ].filter(Boolean);
+
+  const img = candidates.find(u => isImage(u));
+  if (img) return img;
+
+  const pdf = candidates.find(u => isPDF(u));
+  if (pdf) return pdf;
+
+  return "";
+}
 
   // Prefer image
   const img = candidates.find(u => isImage(u));
