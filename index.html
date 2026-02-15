@@ -1,10 +1,3 @@
-cd /workspaces/elr-announcements
-
-# make sure you have the latest remote changes first
-git pull --rebase origin main
-
-# overwrite index.html with the upgraded version
-cat > index.html <<'EOF'
 <!DOCTYPE html>
 <html>
 <head>
@@ -422,9 +415,3 @@ cat > index.html <<'EOF'
   </script>
 </body>
 </html>
-EOF
-
-# now commit + push
-git add index.html
-git commit -m "Polish announcements UI (lighter gradient, spacing, images, channel filters)"
-git push origin main
