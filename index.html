@@ -34,10 +34,7 @@
         linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
     }
 
-    .wrap {
-      max-width: 1120px;
-      margin: 0 auto;
-    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
 
     h1 {
       text-align: center;
@@ -81,9 +78,7 @@
       font-size: 14px;
     }
 
-    .toolbar input::placeholder {
-      color: rgba(255,255,255,0.50);
-    }
+    .toolbar input::placeholder { color: rgba(255,255,255,0.50); }
 
     .post-now {
       width: 100%;
@@ -122,16 +117,9 @@
       box-shadow: 0 18px 50px rgba(0,0,0,0.65);
     }
 
-    .post-inner {
-      display: flex;
-      gap: 24px;
-      align-items: flex-start;
-    }
+    .post-inner { display: flex; gap: 24px; align-items: flex-start; }
 
-    .image-side {
-      width: 250px;
-      min-width: 250px;
-    }
+    .image-side { width: 250px; min-width: 250px; }
 
     .image-side img {
       width: 100%;
@@ -143,36 +131,33 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .thumb-link {
-      display: block;
-      text-decoration: none;
-      border-radius: 14px;
-      overflow: hidden;
-    }
-
-    .no-image {
+    .file-preview {
       height: 168px;
       border-radius: 14px;
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.10);
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
-      color: rgba(255,255,255,0.55);
+      gap: 8px;
+      color: rgba(255,255,255,0.70);
       font-size: 14px;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.2px;
-      margin-bottom: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .file-preview .tiny {
+      font-size: 12px;
+      color: rgba(255,255,255,0.55);
+      font-weight: 700;
     }
 
     .content-side { flex: 1; }
 
-    .title-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
+    .title-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 
     .content-side h2 {
       margin: 0;
@@ -189,34 +174,21 @@
       border-radius: 999px;
       font-weight: 900;
       letter-spacing: 0.6px;
+      white-space: nowrap;
     }
 
-    .meta {
-      margin-top: 4px;
-      margin-bottom: 16px;
-      display: grid;
-      gap: 8px;
+    .badge.secondary {
+      background: rgba(47, 107, 255, 0.18);
+      border: 1px solid rgba(47, 107, 255, 0.35);
+      padding: 5px 10px;
     }
 
-    .meta span {
-      display: block;
-      color: var(--muted);
-      font-size: 14px;
-      line-height: 1.45;
-    }
+    .meta { margin-top: 4px; margin-bottom: 16px; display: grid; gap: 8px; }
+    .meta span { display: block; color: var(--muted); font-size: 14px; line-height: 1.45; }
 
-    .description {
-      margin: 0 0 16px;
-      line-height: 1.7;
-      color: rgba(255,255,255,0.92);
-      font-size: 15px;
-    }
+    .description { margin: 0 0 16px; line-height: 1.7; color: rgba(255,255,255,0.92); font-size: 15px; }
 
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
 
     .btn {
       display: inline-block;
@@ -252,7 +224,7 @@
       .toolbar { grid-template-columns: 1fr; }
       .post-inner { flex-direction: column; }
       .image-side { width: 100%; min-width: 0; }
-      .image-side img, .no-image { height: 200px; }
+      .image-side img, .file-preview { height: 200px; }
     }
   </style>
 </head>
@@ -279,6 +251,10 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
     const POST_FORM_URL = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
 
+    // If you want a nice preview for PDFs/docs, put a real image URL here:
+    // (host a simple "PDF" thumbnail image in Netlify / Webflow / GHL)
+    const DOC_FALLBACK_THUMB = ""; // e.g. "https://elitelivingrealty.com/assets/pdf-thumb.png"
+
     const CHANNELS = [
       "Announcement",
       "Tech Update",
@@ -287,10 +263,10 @@
       "Featured Vendor",
       "Featured Agent",
       "Featured Event",
-      "Open House"
+      "Open House",
+      "Broker Post"
     ];
 
-    // Your table column name for channel/category:
     const CHANNEL_COLUMN = "channel";
 
     // ====== STATE ======
@@ -313,79 +289,77 @@
     searchInput.addEventListener("input", render);
     channelFilter.addEventListener("change", render);
 
+    // ====== SAFETY ======
+    function escapeHtml(str) {
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function nl2br(str) {
+      return escapeHtml(str).replaceAll("\n", "<br>");
+    }
+
     // ====== MEDIA HELPERS ======
-    function isImage(url) {
+    function looksLikeImage(url) {
       return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url || "");
     }
 
-    function isPDF(url) {
+    function looksLikePDF(url) {
       return /\.pdf(\?.*)?$/i.test(url || "");
     }
 
-    function escapeHtml(str) {
-      return (str || "")
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    function renderPreview(imageUrl, attachmentUrl) {
+  // 1) Check if image_url exists and is likely an image (either by extension or by being a Google storage image)
+  if (imageUrl) {
+    // Check if it's an image by extension
+    if (looksLikeImage(imageUrl)) {
+      return `<img src="${escapeHtml(imageUrl)}" alt="Post image">`;
+    }
+    // Check if it's from Google Storage with common image patterns
+    if (imageUrl.includes('googleapis.com') && (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.webp'))) {
+      return `<img src="${escapeHtml(imageUrl)}" alt="Post image">`;
+    }
+  }
+
+  // 2) If attachment_url is an image -> render it
+  if (attachmentUrl && looksLikeImage(attachmentUrl)) {
+    return `<img src="${escapeHtml(attachmentUrl)}" alt="Post image">`;
+  }
+
+  // 3) If attachment_url contains Google Storage with image patterns
+  if (attachmentUrl && attachmentUrl.includes('googleapis.com') && 
+      (attachmentUrl.includes('.jpg') || attachmentUrl.includes('.jpeg') || 
+       attachmentUrl.includes('.png') || attachmentUrl.includes('.webp'))) {
+    return `<img src="${escapeHtml(attachmentUrl)}" alt="Post image">`;
+  }
+
+  // 4) If we have ANY attachment but no image, show a clean doc card
+  if (attachmentUrl) {
+    if (DOC_FALLBACK_THUMB) {
+      return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document preview">`;
     }
 
-    function pdfThumbDataUri() {
-      // Clean PDF thumbnail (no hosting needed)
-      const svg = `
-        <svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
-          <defs>
-            <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-              <stop offset="0" stop-color="#2f6bff" stop-opacity="0.55"/>
-              <stop offset="1" stop-color="#ffffff" stop-opacity="0.08"/>
-            </linearGradient>
-          </defs>
-          <rect width="900" height="560" rx="44" fill="#0b0f16"/>
-          <rect x="28" y="28" width="844" height="504" rx="36" fill="url(#g)" stroke="rgba(255,255,255,0.16)" />
-          <g fill="rgba(255,255,255,0.92)">
-            <text x="70" y="150" font-size="54" font-family="Arial" font-weight="800">PDF Attachment</text>
-            <text x="70" y="215" font-size="30" font-family="Arial" fill="rgba(255,255,255,0.75)">Tap to open / download</text>
-          </g>
-          <g transform="translate(70,270)">
-            <rect width="170" height="210" rx="22" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.18)"/>
-            <path d="M120 18h-54c-12 0-22 10-22 22v130c0 12 10 22 22 22h90c12 0 22-10 22-22V72z"
-                  fill="rgba(255,255,255,0.85)"/>
-            <path d="M120 18v54h54" fill="rgba(255,255,255,0.65)"/>
-            <rect x="38" y="150" width="94" height="30" rx="10" fill="#2f6bff"/>
-            <text x="85" y="172" text-anchor="middle" font-size="18" font-family="Arial" font-weight="900" fill="#fff">PDF</text>
-          </g>
-        </svg>
-      `.trim();
+    const label = looksLikePDF(attachmentUrl) ? "PDF Ready" : "Attachment Ready";
+    return `
+      <div class="file-preview">
+        <div>📄 ${label}</div>
+        <div class="tiny">Tap “Download Attachment”</div>
+      </div>
+    `;
+  }
 
-      return "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(svg);
-    }
-
-    function renderMedia(url) {
-      if (!url) return `<div class="no-image">No Attachment</div>`;
-
-      const safeUrl = escapeHtml(url);
-
-      // Image: show actual preview
-      if (isImage(url)) {
-        return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
-          <img src="${safeUrl}" alt="Post image" loading="lazy" />
-        </a>`;
-      }
-
-      // PDF: show a nice thumbnail card (always renders) + click opens the PDF
-      if (isPDF(url)) {
-        const thumb = pdfThumbDataUri();
-        return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
-          <img src="${thumb}" alt="PDF preview" loading="lazy" />
-        </a>`;
-      }
-
-      // Other file types
-      return `<a class="thumb-link" href="${safeUrl}" target="_blank" rel="noopener">
-        <div class="no-image">Attachment Ready</div>
-      </a>`;
-    }
+  // 5) Nothing
+  return `
+    <div class="file-preview">
+      <div>🫥 No Attachment</div>
+      <div class="tiny">This post has no file</div>
+    </div>
+  `;
+}
 
     // ====== HELPERS ======
     function isNewPost(dateStr) {
@@ -396,6 +370,13 @@
       return diff < 7 * 24 * 60 * 60 * 1000;
     }
 
+    function normalizeChannel(ch) {
+      const s = (ch || "").trim();
+      // Fix common typo you had in SQL: "Annoucement"
+      if (s.toLowerCase() === "annoucement") return "Announcement";
+      return s;
+    }
+
     function matchesSearch(post, q) {
       if (!q) return true;
       const hay = [
@@ -403,15 +384,20 @@
         post.description,
         post.location,
         post.announcer,
-        post[CHANNEL_COLUMN],
-        post.recurrence
+        normalizeChannel(post[CHANNEL_COLUMN])
       ].filter(Boolean).join(" ").toLowerCase();
       return hay.includes(q.toLowerCase());
     }
 
     function matchesChannel(post, selected) {
       if (!selected) return true;
-      return (post[CHANNEL_COLUMN] || "").toLowerCase() === selected.toLowerCase();
+      return normalizeChannel(post[CHANNEL_COLUMN]).toLowerCase() === selected.toLowerCase();
+    }
+
+    function formatTime(t) {
+      // Accepts "13:00:00" etc.
+      if (!t) return "";
+      return String(t).slice(0,5);
     }
 
     // ====== RENDER ======
@@ -433,61 +419,79 @@
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
 
-        // Choose media URL: prefer image_url if it’s an actual image; otherwise use attachment
-        const candidate = post.image_url || post.attachment_url || post.attachment;
-        const mediaUrl = (candidate && isImage(candidate)) ? candidate : (post.attachment || candidate);
-        const imageHtml = renderMedia(mediaUrl);
+        const channel = normalizeChannel(post[CHANNEL_COLUMN]);
 
-        // Buttons
-        const attachmentBtn = post.attachment
-          ? `<a class="btn" href="${escapeHtml(post.attachment)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
+        const attachmentUrl = post.attachment_url || post.attachment || "";
+        const imageUrl = post.image_url || "";
+
+        const previewHtml = renderPreview(imageUrl, attachmentUrl);
+
+        const downloadBtn = attachmentUrl
+          ? `<a class="btn" href="${escapeHtml(attachmentUrl)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
           : "";
 
         const linkBtn = post.link
           ? `<a class="btn" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">🔗 View Link</a>`
           : "";
 
-        // Optional event fields (only show if present)
-        const eventLines = [];
-        if (post.event_start_date) eventLines.push(`📅 Event Start: ${escapeHtml(post.event_start_date)}`);
-        if (post.event_end_date) eventLines.push(`📅 Event End: ${escapeHtml(post.event_end_date)}`);
-        if (post.event_start_time) eventLines.push(`🕒 Start Time: ${escapeHtml(post.event_start_time)}`);
-        if (post.event_end_time) eventLines.push(`🕒 End Time: ${escapeHtml(post.event_end_time)}`);
-        if (post.recurrence) eventLines.push(`🔁 Recurrence: ${escapeHtml(post.recurrence)}`);
+        // Event display
+        const isEvent = (post.is_event === true) || (!!post.event_start_date);
+        const recurrence = (post.recurrence || "").trim();
 
-        const eventMetaHtml = eventLines.map(x => `<span>${x}</span>`).join("");
+        const eventLine = isEvent
+          ? (() => {
+              const sd = post.event_start_date || "";
+              const ed = post.event_end_date || "";
+              const st = formatTime(post.event_start_time);
+              const et = formatTime(post.event_end_time);
+
+              const datePart = sd && ed && sd !== ed ? `${sd} → ${ed}` : (sd || "");
+              const timePart = st && et ? `${st}–${et}` : (st || et || "");
+
+              const bits = [];
+              if (datePart) bits.push(`🗓️ ${escapeHtml(datePart)}`);
+              if (timePart) bits.push(`⏰ ${escapeHtml(timePart)}`);
+              if (recurrence) bits.push(`🔁 ${escapeHtml(recurrence)}`);
+
+              return bits.length ? `<span>${bits.join(" &nbsp;•&nbsp; ")}</span>` : "";
+            })()
+          : "";
+
+        const recurrenceBadge = isEvent && recurrence
+          ? `<span class="badge secondary">${escapeHtml(recurrence)}</span>`
+          : "";
 
         div.innerHTML = `
           <div class="post-inner">
             <div class="image-side">
-              ${imageHtml}
+              ${previewHtml}
             </div>
 
             <div class="content-side">
               <div class="title-row">
                 <h2>${escapeHtml(post.title || "")}</h2>
                 ${newBadge}
+                ${recurrenceBadge}
               </div>
 
               <div class="meta">
                 ${post.date ? `<span>📅 ${escapeHtml(post.date)}</span>` : ``}
+                ${eventLine ? eventLine : ``}
                 ${post.location ? `<span>📍 ${escapeHtml(post.location)}</span>` : ``}
                 ${post.announcer ? `<span>👤 ${escapeHtml(post.announcer)}</span>` : ``}
-                ${post[CHANNEL_COLUMN] ? `<span>🏷️ ${escapeHtml(post[CHANNEL_COLUMN])}</span>` : ``}
-                ${eventMetaHtml}
+                ${channel ? `<span>🏷️ ${escapeHtml(channel)}</span>` : ``}
               </div>
 
-              ${post.description ? `<p class="description">${escapeHtml(post.description)}</p>` : ``}
+              ${post.description ? `<p class="description">${nl2br(post.description)}</p>` : ``}
 
               <div class="btn-row">
                 ${linkBtn}
-                ${attachmentBtn}
+                ${downloadBtn}
               </div>
             </div>
           </div>
         `;
 
-        // Fade in
         div.style.opacity = 0;
         div.style.transition = "opacity 0.35s ease";
         postsContainer.appendChild(div);
@@ -501,23 +505,19 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*&order=created_at.desc`, {
           headers: {
             apikey: SUPABASE_ANON_KEY,
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            Accept: "application/json"
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`
           }
         });
 
         if (!res.ok) {
           const txt = await res.text();
-          console.error("Supabase error:", res.status, txt);
-          postsContainer.innerHTML = `<div class="empty">Couldn’t load posts. (API error)</div>`;
-          return;
+          throw new Error(`Supabase error ${res.status}: ${txt}`);
         }
 
         const data = await res.json();
         allPosts = Array.isArray(data) ? data : [];
         render();
       } catch (e) {
-        console.error(e);
         postsContainer.innerHTML = `<div class="empty">Couldn’t load posts. (API error)</div>`;
       }
     }
