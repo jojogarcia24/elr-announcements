@@ -120,7 +120,7 @@
 
     .image-side { width: 250px; min-width: 250px; }
 
-    .image-side img {
+    .image-side img, .image-side iframe {
       width: 100%;
       height: 200px;
       border-radius: 14px;
@@ -144,8 +144,14 @@
       font-size: 14px;
       font-weight: 800;
       letter-spacing: 0.2px;
-      padding: 10px;
+      padding: 12px;
       text-align: center;
+    }
+
+    .no-image small {
+      font-weight: 700;
+      color: rgba(255,255,255,0.55);
+      word-break: break-word;
     }
 
     .content-side { flex: 1; }
@@ -177,7 +183,7 @@
     }
 
     .meta { margin-top: 4px; margin-bottom: 16px; display: grid; gap: 8px; }
-    .meta span { display: block; color: var(--muted); font-size: 14px; line-height: 1.45; }
+    .meta span { display: block; color: rgba(255,255,255,0.72); font-size: 14px; line-height: 1.45; }
 
     .description { margin: 0 0 16px; line-height: 1.7; color: rgba(255,255,255,0.92); font-size: 15px; }
 
@@ -217,7 +223,7 @@
       .toolbar { grid-template-columns: 1fr; }
       .post-inner { flex-direction: column; }
       .image-side { width: 100%; min-width: 0; }
-      .image-side img, .no-image { height: 200px; }
+      .image-side img, .image-side iframe, .no-image { height: 200px; }
     }
   </style>
 </head>
@@ -241,7 +247,7 @@
   <script>
     // ====== CONFIG ======
     const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
+    const SUPABASE_ANON_KEY = "REPLACE_WITH_YOUR_ANON_KEY"; // <- keep your real one here
     const POST_FORM_URL = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
 
     const DOC_FALLBACK_THUMB =
@@ -259,6 +265,24 @@
           <text x="100" y="170" fill="white" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="46" font-weight="800">DOCUMENT</text>
           <text x="100" y="230" fill="rgba(255,255,255,0.75)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="22">Click Download Attachment</text>
           <text x="100" y="340" fill="rgba(255,255,255,0.55)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="18">PDF / LeadConnector doc</text>
+        </svg>
+      `);
+
+    const LINK_FALLBACK_THUMB =
+      "data:image/svg+xml;utf8," +
+      encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="800" height="520">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#0b0f16"/>
+              <stop offset="1" stop-color="#4b87ff"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" rx="28" fill="url(#g)"/>
+          <rect x="56" y="56" width="688" height="408" rx="22" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.18)"/>
+          <text x="100" y="170" fill="white" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="46" font-weight="800">LINK</text>
+          <text x="100" y="230" fill="rgba(255,255,255,0.75)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="22">Click View Link</text>
+          <text x="100" y="340" fill="rgba(255,255,255,0.55)" font-family="system-ui, -apple-system, Segoe UI, Roboto, Arial" font-size="18">No upload attached</text>
         </svg>
       `);
 
@@ -323,30 +347,71 @@
       return /leadconnectorhq\.com\/documents\/download\//i.test(url || "");
     }
 
-    function renderMedia(url) {
-      if (!url) return `<div class="no-image">No Attachment</div>`;
+    function getHost(url) {
+      try { return new URL(url).host; } catch { return ""; }
+    }
 
-      const safeUrl = escapeHtml(url);
+    // SIMPLE RULE:
+    // - Preview comes ONLY from uploads (image_url, attachment_url, attachment)
+    // - If no upload exists, show a LINK card (not a scraped image)
+    function pickPreviewUrl(post) {
+      const candidates = [
+        post.image_url,
+        post.attachment_url,
+        post.attachment
+      ].filter(Boolean);
 
-      if (isImage(url)) {
-        return `<img src="${safeUrl}" alt="Post image" />`;
+      const img = candidates.find(u => isImage(u));
+      if (img) return img;
+
+      const pdf = candidates.find(u => isPDF(u));
+      if (pdf) return pdf;
+
+      const lcd = candidates.find(u => isLeadConnectorDoc(u));
+      if (lcd) return lcd;
+
+      return "";
+    }
+
+    function renderMedia(previewUrl, linkUrl) {
+      // If we have an upload preview: render it
+      if (previewUrl) {
+        const safeUrl = escapeHtml(previewUrl);
+
+        if (isImage(previewUrl)) {
+          return `<img src="${safeUrl}" alt="Post image" />`;
+        }
+
+        if (isPDF(previewUrl)) {
+          return `
+            <iframe
+              src="${safeUrl}#toolbar=0&navpanes=0&scrollbar=0"
+              loading="lazy"
+              style="width:100%; height:200px; border:0; border-radius:14px; background:rgba(255,255,255,0.04);"
+            ></iframe>
+          `;
+        }
+
+        if (isLeadConnectorDoc(previewUrl)) {
+          return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document thumbnail" />`;
+        }
+
+        return `<div class="no-image">Attachment Ready</div>`;
       }
 
-      if (isPDF(url)) {
+      // No upload: show LINK card (clean, predictable)
+      if (linkUrl) {
+        const host = getHost(linkUrl);
         return `
-          <iframe
-            src="${safeUrl}#toolbar=0&navpanes=0&scrollbar=0"
-            style="width:100%; height:168px; border:0; border-radius:14px; background:rgba(255,255,255,0.04);"
-            loading="lazy"
-          ></iframe>
+          <div class="no-image">
+            LINK READY
+            <small>${escapeHtml(host || linkUrl)}</small>
+          </div>
         `;
       }
 
-      if (isLeadConnectorDoc(url)) {
-        return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document thumbnail" />`;
-      }
-
-      return `<div class="no-image">Attachment Ready</div>`;
+      // Nothing at all
+      return `<div class="no-image">No Attachment</div>`;
     }
 
     // ====== HELPERS ======
@@ -383,36 +448,7 @@
 
     function formatTime(t) {
       if (!t) return "";
-      // supports "10:00:00" or "10:00"
       return String(t).slice(0,5);
-    }
-
-    // ✅ SINGLE, CLEAN VERSION (no duplicates)
-    function pickPreviewUrl(post) {
-      const candidates = [
-        post.image_url,
-        post.attachment_url,
-        post.attachment,
-        post.link
-      ].filter(Boolean);
-
-      const img = candidates.find(u => isImage(u));
-      if (img) return img;
-
-      const pdf = candidates.find(u => isPDF(u));
-      if (pdf) return pdf;
-
-      const lcd = candidates.find(u => isLeadConnectorDoc(u));
-      if (lcd) return lcd;
-
-      return candidates[0] || "";
-    }
-
-    function truthyBool(v) {
-      // handles true, "true", "t", 1, "1"
-      if (v === true) return true;
-      const s = String(v || "").toLowerCase().trim();
-      return s === "true" || s === "t" || s === "1" || s === "yes";
     }
 
     // ====== RENDER ======
@@ -437,7 +473,7 @@
 
         const attachmentUrl = post.attachment_url || post.attachment || "";
         const previewUrl = pickPreviewUrl(post);
-        const previewHtml = renderMedia(previewUrl);
+        const previewHtml = renderMedia(previewUrl, post.link);
 
         const downloadBtn = attachmentUrl
           ? `<a class="btn" href="${escapeHtml(attachmentUrl)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
@@ -447,7 +483,7 @@
           ? `<a class="btn" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">🔗 View Link</a>`
           : "";
 
-        const isEvent = truthyBool(post.is_event) || !!post.event_start_date;
+        const isEvent = (post.is_event === true) || (!!post.event_start_date);
         const recurrence = (post.recurrence || "").trim();
 
         const eventLine = isEvent
@@ -463,13 +499,13 @@
               const bits = [];
               if (datePart) bits.push(`🗓️ ${escapeHtml(datePart)}`);
               if (timePart) bits.push(`⏰ ${escapeHtml(timePart)}`);
-              if (recurrence && recurrence.toLowerCase() !== "none") bits.push(`🔁 ${escapeHtml(recurrence)}`);
+              if (recurrence) bits.push(`🔁 ${escapeHtml(recurrence)}`);
 
               return bits.length ? `<span>${bits.join(" &nbsp;•&nbsp; ")}</span>` : "";
             })()
           : "";
 
-        const recurrenceBadge = isEvent && recurrence && recurrence.toLowerCase() !== "none"
+        const recurrenceBadge = isEvent && recurrence
           ? `<span class="badge secondary">${escapeHtml(recurrence)}</span>`
           : "";
 
