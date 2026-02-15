@@ -131,7 +131,7 @@
       background: rgba(255,255,255,0.04);
     }
 
-    .file-preview {
+    .no-image {
       height: 168px;
       border-radius: 14px;
       background: rgba(255,255,255,0.05);
@@ -147,12 +147,6 @@
       letter-spacing: 0.2px;
       padding: 10px;
       text-align: center;
-    }
-
-    .file-preview .tiny {
-      font-size: 12px;
-      color: rgba(255,255,255,0.55);
-      font-weight: 700;
     }
 
     .content-side { flex: 1; }
@@ -224,7 +218,7 @@
       .toolbar { grid-template-columns: 1fr; }
       .post-inner { flex-direction: column; }
       .image-side { width: 100%; min-width: 0; }
-      .image-side img, .file-preview { height: 200px; }
+      .image-side img, .no-image { height: 200px; }
     }
   </style>
 </head>
@@ -248,12 +242,11 @@
   <script>
     // ====== CONFIG ======
     const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
+    const SUPABASE_ANON_KEY = "YOUR_ANON_KEY_HERE";
     const POST_FORM_URL = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
-
-    // If you want a nice preview for PDFs/docs, put a real image URL here:
-    // (host a simple "PDF" thumbnail image in Netlify / Webflow / GHL)
-    const DOC_FALLBACK_THUMB = ""; // e.g. "https://elitelivingrealty.com/assets/pdf-thumb.png"
+    
+    // A real public image URL for doc/pdf fallback thumbnails
+    const DOC_FALLBACK_THUMB = "https://yourdomain.com/assets/doc-thumb.png";
 
     const CHANNELS = [
       "Announcement",
@@ -304,62 +297,32 @@
     }
 
     // ====== MEDIA HELPERS ======
-    function looksLikeImage(url) {
+    function isImage(url) {
       return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url || "");
     }
 
-    function looksLikePDF(url) {
+    function isPDF(url) {
       return /\.pdf(\?.*)?$/i.test(url || "");
     }
 
-    function renderPreview(imageUrl, attachmentUrl) {
-  // 1) Check if image_url exists and is likely an image (either by extension or by being a Google storage image)
-  if (imageUrl) {
-    // Check if it's an image by extension
-    if (looksLikeImage(imageUrl)) {
-      return `<img src="${escapeHtml(imageUrl)}" alt="Post image">`;
-    }
-    // Check if it's from Google Storage with common image patterns
-    if (imageUrl.includes('googleapis.com') && (imageUrl.includes('.jpg') || imageUrl.includes('.jpeg') || imageUrl.includes('.png') || imageUrl.includes('.webp'))) {
-      return `<img src="${escapeHtml(imageUrl)}" alt="Post image">`;
-    }
-  }
-
-  // 2) If attachment_url is an image -> render it
-  if (attachmentUrl && looksLikeImage(attachmentUrl)) {
-    return `<img src="${escapeHtml(attachmentUrl)}" alt="Post image">`;
-  }
-
-  // 3) If attachment_url contains Google Storage with image patterns
-  if (attachmentUrl && attachmentUrl.includes('googleapis.com') && 
-      (attachmentUrl.includes('.jpg') || attachmentUrl.includes('.jpeg') || 
-       attachmentUrl.includes('.png') || attachmentUrl.includes('.webp'))) {
-    return `<img src="${escapeHtml(attachmentUrl)}" alt="Post image">`;
-  }
-
-  // 4) If we have ANY attachment but no image, show a clean doc card
-  if (attachmentUrl) {
-    if (DOC_FALLBACK_THUMB) {
-      return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document preview">`;
+    function isLeadConnectorDoc(url) {
+      return /leadconnectorhq\.com\/documents\/download\//i.test(url || "");
     }
 
-    const label = looksLikePDF(attachmentUrl) ? "PDF Ready" : "Attachment Ready";
-    return `
-      <div class="file-preview">
-        <div>📄 ${label}</div>
-        <div class="tiny">Tap “Download Attachment”</div>
-      </div>
-    `;
-  }
+    function renderMedia(url) {
+      if (!url) return `<div class="no-image">No Attachment</div>`;
 
-  // 5) Nothing
-  return `
-    <div class="file-preview">
-      <div>🫥 No Attachment</div>
-      <div class="tiny">This post has no file</div>
-    </div>
-  `;
-}
+      if (isImage(url)) {
+        return `<img src="${escapeHtml(url)}" alt="Post image" />`;
+      }
+
+      // If it's a PDF OR a LeadConnector doc link with no extension → show a thumbnail image
+      if (isPDF(url) || isLeadConnectorDoc(url)) {
+        return `<img src="${escapeHtml(DOC_FALLBACK_THUMB)}" alt="Document thumbnail" />`;
+      }
+
+      return `<div class="no-image">Attachment Ready</div>`;
+    }
 
     // ====== HELPERS ======
     function isNewPost(dateStr) {
@@ -424,7 +387,9 @@
         const attachmentUrl = post.attachment_url || post.attachment || "";
         const imageUrl = post.image_url || "";
 
-        const previewHtml = renderPreview(imageUrl, attachmentUrl);
+        // Use the first available media URL for preview (image_url takes precedence, then attachment_url)
+        const previewUrl = imageUrl || attachmentUrl;
+        const previewHtml = renderMedia(previewUrl);
 
         const downloadBtn = attachmentUrl
           ? `<a class="btn" href="${escapeHtml(attachmentUrl)}" target="_blank" rel="noopener">📎 Download Attachment</a>`
