@@ -6,39 +6,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <style>
+    :root{
+      --bg0:#07090d;
+      --bg1:#0b0f16;
+      --card: rgba(15,18,26,0.78);
+      --cardBorder: rgba(255,255,255,0.10);
+      --muted: rgba(255,255,255,0.72);
+      --muted2: rgba(255,255,255,0.56);
+      --text: rgba(255,255,255,0.95);
+      --accent:#2f6bff;
+      --accent2:#4b87ff;
+      --shadow: 0 16px 40px rgba(0,0,0,0.55);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
       margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(90deg, #0a0a0a 0%, #101820 30%, #041b4d 70%, #276bff 100%);
-      color: white;
-      padding: 40px 20px;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
       min-height: 100vh;
+      padding: 44px 20px 64px;
+      background:
+        radial-gradient(1200px 500px at 20% 12%, rgba(47,107,255,0.18), transparent 60%),
+        radial-gradient(900px 500px at 80% 18%, rgba(255,255,255,0.08), transparent 60%),
+        linear-gradient(180deg, var(--bg0) 0%, var(--bg1) 100%);
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
     }
 
     h1 {
       text-align: center;
-      margin: 0 0 24px;
-      font-size: 44px;
-      letter-spacing: 0.5px;
+      margin: 0 0 22px;
+      font-size: 46px;
+      letter-spacing: 0.3px;
+      line-height: 1.1;
+      font-weight: 850;
+      text-shadow: 0 10px 30px rgba(0,0,0,0.55);
+    }
+
+    .subtle-line {
+      height: 1px;
+      width: 100%;
+      max-width: 780px;
+      margin: 14px auto 26px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
     }
 
     .toolbar {
-  max-width: 1100px;
-  margin: 0 auto 26px;
-  background: rgba(10, 35, 90, 0.45);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 14px;
-  padding: 14px;
-  display: grid;
-  grid-template-columns: 1fr 260px 160px;
-  gap: 12px;
-  backdrop-filter: blur(10px);
-}
+      margin: 0 auto 26px;
+      background: rgba(10,12,18,0.75);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: var(--radius);
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr 260px 170px;
+      gap: 12px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+    }
 
     .toolbar input, .toolbar select {
       width: 100%;
       padding: 12px 14px;
-      border-radius: 10px;
+      border-radius: 12px;
       border: 1px solid rgba(255,255,255,0.12);
       background: rgba(0,0,0,0.35);
       color: #fff;
@@ -47,83 +82,82 @@
     }
 
     .toolbar input::placeholder {
-      color: rgba(255,255,255,0.55);
+      color: rgba(255,255,255,0.50);
     }
 
     .post-now {
       width: 100%;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       padding: 12px 14px;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       color: white;
-      background: linear-gradient(90deg, #276bff, #4f8dff);
-      transition: all 0.3s ease;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      transition: transform 0.18s ease, box-shadow 0.25s ease, opacity 0.2s ease;
     }
 
     .post-now:hover {
-      transform: scale(1.03);
-      box-shadow: 0 0 20px rgba(39,107,255,0.5);
-      opacity: 0.95;
+      transform: translateY(-1px);
+      box-shadow: 0 0 0 1px rgba(47,107,255,0.25), 0 14px 30px rgba(47,107,255,0.25);
+      opacity: 0.98;
     }
 
-    #posts {
-      max-width: 1100px;
-      margin: 0 auto;
-    }
+    #posts { margin: 0 auto; }
 
     .post {
-  background: rgba(10, 35, 90, 0.55);
-  border: 1px solid rgba(255,255,255,0.10);
-  padding: 24px;
-  border-radius: 14px;
-  margin-bottom: 18px;
-  backdrop-filter: blur(10px);
-  transition: all 0.25s ease;
-}
+      background: var(--card);
+      border: 1px solid var(--cardBorder);
+      padding: 22px;
+      border-radius: var(--radius);
+      margin-bottom: 18px;
+      backdrop-filter: blur(12px);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    }
 
     .post:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 10px 25px rgba(39,107,255,0.35);
+      transform: translateY(-3px);
+      border-color: rgba(47,107,255,0.22);
+      box-shadow: 0 18px 50px rgba(0,0,0,0.65);
     }
 
     .post-inner {
       display: flex;
-      gap: 26px;
+      gap: 24px;
       align-items: flex-start;
     }
 
     .image-side {
-      width: 240px;
-      min-width: 240px;
+      width: 250px;
+      min-width: 250px;
     }
 
     .image-side img {
       width: 100%;
-      height: 160px;
-      border-radius: 12px;
+      height: 168px;
+      border-radius: 14px;
       object-fit: cover;
       display: block;
-      border: 1px solid rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.04);
     }
 
     .no-image {
-      height: 160px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.08);
+      height: 168px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
       display: flex;
       align-items: center;
       justify-content: center;
-      color: rgba(255,255,255,0.6);
+      color: rgba(255,255,255,0.55);
       font-size: 14px;
-      font-weight: 600;
+      font-weight: 700;
+      letter-spacing: 0.2px;
     }
 
-    .content-side {
-      flex: 1;
-    }
+    .content-side { flex: 1; }
 
     .title-row {
       display: flex;
@@ -134,35 +168,38 @@
 
     .content-side h2 {
       margin: 0;
-      font-size: 22px;
+      font-size: 24px;
       line-height: 1.2;
+      font-weight: 850;
+      letter-spacing: 0.2px;
     }
 
     .badge {
-      background: #276bff;
-      padding: 4px 8px;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      padding: 5px 9px;
       font-size: 11px;
-      border-radius: 6px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
+      border-radius: 999px;
+      font-weight: 900;
+      letter-spacing: 0.6px;
     }
 
     .meta {
-      margin-top: 8px;
+      margin-top: 4px;
       margin-bottom: 16px;
+      display: grid;
+      gap: 8px; /* 👈 more spacing so it’s not bunched */
     }
 
     .meta span {
       display: block;
-      margin-bottom: 6px;
-      color: rgba(255,255,255,0.75);
+      color: var(--muted);
       font-size: 14px;
-      line-height: 1.35;
+      line-height: 1.45;
     }
 
     .description {
       margin: 0 0 16px;
-      line-height: 1.65;
+      line-height: 1.7;
       color: rgba(255,255,255,0.92);
       font-size: 15px;
     }
@@ -176,30 +213,30 @@
     .btn {
       display: inline-block;
       padding: 10px 14px;
-      background: rgba(39, 107, 255, 0.18);
-      border: 1px solid rgba(39, 107, 255, 0.35);
+      background: rgba(47, 107, 255, 0.16);
+      border: 1px solid rgba(47, 107, 255, 0.30);
       color: white;
       text-decoration: none;
-      border-radius: 10px;
+      border-radius: 12px;
       font-size: 14px;
-      font-weight: 700;
-      transition: all 0.2s ease;
+      font-weight: 800;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
     }
 
     .btn:hover {
       transform: translateY(-1px);
-      background: rgba(39, 107, 255, 0.28);
+      background: rgba(47, 107, 255, 0.24);
+      border-color: rgba(47,107,255,0.45);
     }
 
     .empty {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 22px;
-      border-radius: 14px;
+      padding: 18px;
+      border-radius: var(--radius);
       background: rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.75);
-      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.10);
+      color: rgba(255,255,255,0.78);
+      backdrop-filter: blur(10px);
+      box-shadow: var(--shadow);
     }
 
     @media (max-width: 900px) {
@@ -207,30 +244,31 @@
       .toolbar { grid-template-columns: 1fr; }
       .post-inner { flex-direction: column; }
       .image-side { width: 100%; min-width: 0; }
-      .image-side img, .no-image { height: 180px; }
+      .image-side img, .no-image { height: 200px; }
     }
   </style>
 </head>
 
 <body>
+  <div class="wrap">
+    <h1>📣 Elite Living Announcements</h1>
+    <div class="subtle-line"></div>
 
-  <h1>📣 Elite Living Announcements</h1>
+    <div class="toolbar">
+      <input id="searchInput" type="text" placeholder="Search posts..." />
+      <select id="channelFilter">
+        <option value="">All Channels</option>
+      </select>
+      <button class="post-now" id="postNowBtn">+ Post Now</button>
+    </div>
 
-  <div class="toolbar">
-    <input id="searchInput" type="text" placeholder="Search posts..." />
-    <select id="channelFilter">
-      <option value="">All Channels</option>
-    </select>
-    <button class="post-now" id="postNowBtn">+ Post Now</button>
+    <div id="posts"></div>
   </div>
-
-  <div id="posts"></div>
 
   <script>
     // ====== CONFIG ======
     const SUPABASE_URL = "https://jbthylezmmusmoqamqld.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpidGh5bGV6bW11c21vcWFtcWxkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzExNTEwMzMsImV4cCI6MjA4NjcyNzAzM30.wJaqVMLIiLhsENyY9i6xDxbosFjO40Fr6dJiAyeOa4Y";
-
     const POST_FORM_URL = "https://api.leadconnectorhq.com/widget/form/hczSZ9VUgJztIGcoj0vc";
 
     const CHANNELS = [
@@ -244,14 +282,13 @@
       "Open House"
     ];
 
-    // If your table uses a different column name for channel, update this:
-    // Example: "channel" or "post_type" or "category"
+    // Your table column name for channel/category:
     const CHANNEL_COLUMN = "channel";
 
     // ====== STATE ======
     let allPosts = [];
 
-    // ====== UI SETUP ======
+    // ====== UI ======
     const searchInput = document.getElementById("searchInput");
     const channelFilter = document.getElementById("channelFilter");
     const postsContainer = document.getElementById("posts");
@@ -264,16 +301,12 @@
       channelFilter.appendChild(opt);
     });
 
-    postNowBtn.addEventListener("click", () => {
-      window.open(POST_FORM_URL, "_blank");
-    });
-
+    postNowBtn.addEventListener("click", () => window.open(POST_FORM_URL, "_blank"));
     searchInput.addEventListener("input", render);
     channelFilter.addEventListener("change", render);
 
     // ====== HELPERS ======
     function isNewPost(dateStr) {
-      // Treat dateStr as YYYY-MM-DD if that's what you're storing
       if (!dateStr) return false;
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return false;
@@ -298,15 +331,33 @@
       return (post[CHANNEL_COLUMN] || "").toLowerCase() === selected.toLowerCase();
     }
 
+    function isImageUrl(url) {
+      if (!url) return false;
+      const clean = String(url).split("?")[0].toLowerCase();
+      return /\.(png|jpe?g|webp|gif)$/i.test(clean);
+    }
+
+    function isPdfUrl(url) {
+      if (!url) return false;
+      const clean = String(url).split("?")[0].toLowerCase();
+      return /\.pdf$/i.test(clean);
+    }
+
+    // Pick the best image source:
+    // 1) image_url if present
+    // 2) attachment IF it's an image (not pdf)
+    function resolveImage(post) {
+      if (post.image_url && isImageUrl(post.image_url)) return post.image_url;
+      if (post.attachment && isImageUrl(post.attachment)) return post.attachment;
+      return null;
+    }
+
     // ====== RENDER ======
     function render() {
       const q = searchInput.value.trim();
       const selectedChannel = channelFilter.value;
 
-      const filtered = allPosts.filter(p =>
-        matchesSearch(p, q) && matchesChannel(p, selectedChannel)
-      );
-
+      const filtered = allPosts.filter(p => matchesSearch(p, q) && matchesChannel(p, selectedChannel));
       postsContainer.innerHTML = "";
 
       if (!filtered.length) {
@@ -319,13 +370,25 @@
         div.className = "post";
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
+        const imgSrc = resolveImage(post);
+
+        const attachmentBtn = post.attachment
+          ? `<a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>`
+          : "";
+
+        const linkBtn = post.link
+          ? `<a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>`
+          : "";
+
+        // If attachment is an image, keep the download button too (nice for saving)
+        // If attachment is a PDF, we only show the download button and no image preview.
 
         div.innerHTML = `
           <div class="post-inner">
             <div class="image-side">
-              ${post.image_url
-                ? `<img src="${post.image_url}" alt="Post image" />`
-                : `<div class="no-image">No Image</div>`
+              ${imgSrc
+                ? `<img src="${imgSrc}" alt="Post image" loading="lazy" />`
+                : `<div class="no-image">${post.attachment && isPdfUrl(post.attachment) ? "PDF Attached" : "No Image"}</div>`
               }
             </div>
 
@@ -336,27 +399,39 @@
               </div>
 
               <div class="meta">
-                <span>📅 ${post.date || ""}</span>
-                <span>📍 ${post.location || ""}</span>
-                <span>👤 ${post.announcer || ""}</span>
+                ${post.date ? `<span>📅 ${post.date}</span>` : ``}
+                ${post.location ? `<span>📍 ${post.location}</span>` : ``}
+                ${post.announcer ? `<span>👤 ${post.announcer}</span>` : ``}
                 ${post[CHANNEL_COLUMN] ? `<span>🏷️ ${post[CHANNEL_COLUMN]}</span>` : ``}
               </div>
 
-              <p class="description">${post.description || ""}</p>
+              ${post.description ? `<p class="description">${post.description}</p>` : ``}
 
               <div class="btn-row">
-                ${post.link ? `<a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>` : ""}
-                ${post.attachment ? `<a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>` : ""}
+                ${linkBtn}
+                ${attachmentBtn}
               </div>
             </div>
           </div>
         `;
 
-        // fade in
+        // Fade in
         div.style.opacity = 0;
-        div.style.transition = "opacity 0.4s ease";
+        div.style.transition = "opacity 0.35s ease";
         postsContainer.appendChild(div);
-        setTimeout(() => { div.style.opacity = 1; }, 50);
+        setTimeout(() => { div.style.opacity = 1; }, 40);
+
+        // If image URL is broken, fallback to "No Image"
+        const img = div.querySelector("img");
+        if (img) {
+          img.onerror = () => {
+            img.remove();
+            const holder = document.createElement("div");
+            holder.className = "no-image";
+            holder.textContent = "No Image";
+            div.querySelector(".image-side").appendChild(holder);
+          };
+        }
       });
     }
 
