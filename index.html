@@ -306,6 +306,35 @@
     searchInput.addEventListener("input", render);
     channelFilter.addEventListener("change", render);
 
+    // ====== MEDIA HELPERS ======
+    function isImage(url) {
+      return /\.(jpg|jpeg|png|webp|gif)(\?.*)?$/i.test(url || "");
+    }
+
+    function isPDF(url) {
+      return /\.pdf(\?.*)?$/i.test(url || "");
+    }
+
+    function renderMedia(url) {
+      if (!url) return `<div class="no-image">No Attachment</div>`;
+
+      if (isImage(url)) {
+        return `<img src="${url}" alt="Post image" />`;
+      }
+
+      if (isPDF(url)) {
+        return `
+          <iframe
+            src="${url}#view=FitH"
+            style="width:100%;height:160px;border:0;border-radius:12px;"
+            loading="lazy"
+          ></iframe>
+        `;
+      }
+
+      return `<div class="no-image">Attachment Ready</div>`;
+    }
+
     // ====== HELPERS ======
     function isNewPost(dateStr) {
       if (!dateStr) return false;
@@ -352,38 +381,10 @@
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
         
         // Handle file URL (image or PDF)
-        const fileUrl = post.image_url || post.attachment || "";
-        const safeFileUrl = fileUrl ? encodeURI(fileUrl) : "";
-        const looksPdf = safeFileUrl.toLowerCase().includes(".pdf") || safeFileUrl.toLowerCase().includes("pdf");
+        const fileUrl = post.image_url || post.attachment_url || post.attachment;
+        let imageHtml = renderMedia(fileUrl);
 
-        let imageHtml;
-        if (!safeFileUrl) {
-          imageHtml = `<div class="no-image">No File</div>`;
-        } else if (looksPdf) {
-          imageHtml = `
-            <div class="no-image">📄 PDF Preview</div>
-            <a class="btn" style="margin-top:10px; display:inline-block;" href="${safeFileUrl}" target="_blank">👀 Open PDF</a>
-          `;
-        } else {
-          imageHtml = `
-            <img
-              src="${safeFileUrl}"
-              alt="Post image"
-              referrerpolicy="no-referrer"
-              crossorigin="anonymous"
-              onerror="
-                this.style.display='none';
-                this.closest('.image-side').querySelector('.fallback-preview').style.display='block';
-              "
-            />
-            <div class="fallback-preview" style="display:none;">
-              <div class="no-image">Image link won’t embed</div>
-              <a class="btn" style="margin-top:10px; display:inline-block;" href="${safeFileUrl}" target="_blank">👀 Open Image</a>
-            </div>
-          `;
-        }
-
-        const attachmentBtn = post.attachment && safeFileUrl !== post.attachment
+        const attachmentBtn = post.attachment && fileUrl !== post.attachment
           ? `<a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>`
           : "";
 
