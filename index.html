@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Elite Living Announcements</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(90deg, #0a0a0a 0%, #101820 30%, #041b4d 70%, #276bff 100%);
+      color: white;
+      padding: 40px 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .post {
+      background: #000;
+      padding: 25px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .post h2 {
+      margin-top: 0;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: #ccc;
+      margin-bottom: 15px;
+    }
+
+    .post img {
+      max-width: 100%;
+      border-radius: 12px;
+      margin-top: 15px;
+    }
+
+    .btn {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: #276bff;
+      color: white;
+      text-decoration: none;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .btn:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+
+<h1>📣 Elite Living Announcements</h1>
+
+<div id="posts"></div>
+
+<script>
+  fetch('posts.json')
+    .then(res => res.json())
+    .then(data => {
+      const container = document.getElementById('posts');
+
+      data.reverse().forEach(post => {
+        const div = document.createElement('div');
+        div.className = 'post';
+
+        div.innerHTML = `
+          <h2>${post.title}</h2>
+          <div class="meta">
+            📅 ${post.date} <br>
+            📍 ${post.location || ''} <br>
+            👤 ${post.announcer || ''}
+          </div>
+          <p>${post.description}</p>
+          ${post.image ? `<img src="${post.image}" />` : ''}
+          ${post.link ? `<br><a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>` : ''}
+          ${post.attachment ? `<br><a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>` : ''}
+        `;
+
+        container.appendChild(div);
+      });
+    });
+</script>
+
+</body>
+</html>
