@@ -155,6 +155,7 @@
       font-size: 14px;
       font-weight: 700;
       letter-spacing: 0.2px;
+      margin-bottom: 10px;
     }
 
     .content-side { flex: 1; }
@@ -187,7 +188,7 @@
       margin-top: 4px;
       margin-bottom: 16px;
       display: grid;
-      gap: 8px; /* 👈 more spacing so it’s not bunched */
+      gap: 8px;
     }
 
     .meta span {
@@ -331,27 +332,6 @@
       return (post[CHANNEL_COLUMN] || "").toLowerCase() === selected.toLowerCase();
     }
 
-    function isImageUrl(url) {
-      if (!url) return false;
-      const clean = String(url).split("?")[0].toLowerCase();
-      return /\.(png|jpe?g|webp|gif)$/i.test(clean);
-    }
-
-    function isPdfUrl(url) {
-      if (!url) return false;
-      const clean = String(url).split("?")[0].toLowerCase();
-      return /\.pdf$/i.test(clean);
-    }
-
-    // Pick the best image source:
-    // 1) image_url if present
-    // 2) attachment IF it's an image (not pdf)
-    function resolveImage(post) {
-      if (post.image_url && isImageUrl(post.image_url)) return post.image_url;
-      if (post.attachment && isImageUrl(post.attachment)) return post.attachment;
-      return null;
-    }
-
     // ====== RENDER ======
     function render() {
       const q = searchInput.value.trim();
@@ -370,9 +350,40 @@
         div.className = "post";
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
-        const imgSrc = resolveImage(post);
+        
+        // Handle file URL (image or PDF)
+        const fileUrl = post.image_url || post.attachment || "";
+        const safeFileUrl = fileUrl ? encodeURI(fileUrl) : "";
+        const looksPdf = safeFileUrl.toLowerCase().includes(".pdf") || safeFileUrl.toLowerCase().includes("pdf");
 
-        const attachmentBtn = post.attachment
+        let imageHtml;
+        if (!safeFileUrl) {
+          imageHtml = `<div class="no-image">No File</div>`;
+        } else if (looksPdf) {
+          imageHtml = `
+            <div class="no-image">📄 PDF Preview</div>
+            <a class="btn" style="margin-top:10px; display:inline-block;" href="${safeFileUrl}" target="_blank">👀 Open PDF</a>
+          `;
+        } else {
+          imageHtml = `
+            <img
+              src="${safeFileUrl}"
+              alt="Post image"
+              referrerpolicy="no-referrer"
+              crossorigin="anonymous"
+              onerror="
+                this.style.display='none';
+                this.closest('.image-side').querySelector('.fallback-preview').style.display='block';
+              "
+            />
+            <div class="fallback-preview" style="display:none;">
+              <div class="no-image">Image link won’t embed</div>
+              <a class="btn" style="margin-top:10px; display:inline-block;" href="${safeFileUrl}" target="_blank">👀 Open Image</a>
+            </div>
+          `;
+        }
+
+        const attachmentBtn = post.attachment && safeFileUrl !== post.attachment
           ? `<a class="btn" href="${post.attachment}" target="_blank">📎 Download Attachment</a>`
           : "";
 
@@ -380,16 +391,10 @@
           ? `<a class="btn" href="${post.link}" target="_blank">🔗 View Link</a>`
           : "";
 
-        // If attachment is an image, keep the download button too (nice for saving)
-        // If attachment is a PDF, we only show the download button and no image preview.
-
         div.innerHTML = `
           <div class="post-inner">
             <div class="image-side">
-              ${imgSrc
-                ? `<img src="${imgSrc}" alt="Post image" loading="lazy" />`
-                : `<div class="no-image">${post.attachment && isPdfUrl(post.attachment) ? "PDF Attached" : "No Image"}</div>`
-              }
+              ${imageHtml}
             </div>
 
             <div class="content-side">
@@ -420,18 +425,6 @@
         div.style.transition = "opacity 0.35s ease";
         postsContainer.appendChild(div);
         setTimeout(() => { div.style.opacity = 1; }, 40);
-
-        // If image URL is broken, fallback to "No Image"
-        const img = div.querySelector("img");
-        if (img) {
-          img.onerror = () => {
-            img.remove();
-            const holder = document.createElement("div");
-            holder.className = "no-image";
-            holder.textContent = "No Image";
-            div.querySelector(".image-side").appendChild(holder);
-          };
-        }
       });
     }
 
