@@ -575,15 +575,6 @@
       return String(t).slice(0,5);
     }
 
-    function safePostForEdit(post) {
-      return {
-        id: post.id || "",
-        title: post.title || "",
-        description: post.description || "",
-        location: post.location || ""
-      };
-    }
-
     // ====== RENDER ======
     function render() {
       const q = searchInput.value.trim();
@@ -620,9 +611,14 @@
           ? `<button class="delete-btn" onclick="deleteAnnouncement('${escapeHtml(post.id || "")}')">🗑 Delete</button>`
           : "";
 
-        const editPayload = escapeHtml(JSON.stringify(safePostForEdit(post)));
         const editBtn = isAdminMode()
-          ? `<button class="edit-btn" data-post='${editPayload}'>✏ Edit</button>`
+          ? `<button
+              class="edit-btn"
+              data-id="${escapeHtml(post.id || "")}"
+              data-title="${escapeHtml(post.title || "")}"
+              data-description="${escapeHtml(post.description || "")}"
+              data-location="${escapeHtml(post.location || "")}"
+            >✏ Edit</button>`
           : "";
 
         const isEvent = (post.is_event === true) || (!!post.event_start_date);
@@ -691,9 +687,12 @@
         const editButtonEl = div.querySelector(".edit-btn");
         if (editButtonEl) {
           editButtonEl.addEventListener("click", () => {
-            const raw = editButtonEl.getAttribute("data-post");
-            if (!raw) return;
-            editAnnouncement(JSON.parse(raw));
+            editAnnouncement({
+              id: editButtonEl.getAttribute("data-id") || "",
+              title: editButtonEl.getAttribute("data-title") || "",
+              description: editButtonEl.getAttribute("data-description") || "",
+              location: editButtonEl.getAttribute("data-location") || ""
+            });
           });
         }
 
