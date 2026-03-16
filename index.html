@@ -227,6 +227,25 @@
       border-color: rgba(255, 77, 79, 0.5);
     }
 
+    .edit-btn {
+      display: inline-block;
+      padding: 10px 14px;
+      background: rgba(255, 193, 7, 0.16);
+      border: 1px solid rgba(255, 193, 7, 0.35);
+      color: white;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .edit-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 193, 7, 0.24);
+      border-color: rgba(255, 193, 7, 0.48);
+    }
+
     .empty {
       padding: 18px;
       border-radius: var(--radius);
@@ -366,6 +385,45 @@
         location.reload();
       } catch (err) {
         alert(err.message || "Delete failed");
+      }
+    }
+
+    async function editAnnouncement(post) {
+      const newTitle = prompt("Edit title:", post.title || "");
+      if (newTitle === null) return;
+
+      const newDescription = prompt("Edit description:", post.description || "");
+      if (newDescription === null) return;
+
+      const newLocation = prompt("Edit location:", post.location || "");
+      if (newLocation === null) return;
+
+      try {
+        const resp = await fetch("/.netlify/functions/edit-announcement", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + getAdminToken()
+          },
+          body: JSON.stringify({
+            id: post.id,
+            updates: {
+              title: newTitle,
+              description: newDescription,
+              location: newLocation
+            }
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || "Edit failed");
+        }
+
+        location.reload();
+      } catch (err) {
+        alert(err.message || "Edit failed");
       }
     }
 
@@ -517,6 +575,15 @@
       return String(t).slice(0,5);
     }
 
+    function safePostForEdit(post) {
+      return {
+        id: post.id || "",
+        title: post.title || "",
+        description: post.description || "",
+        location: post.location || ""
+      };
+    }
+
     // ====== RENDER ======
     function render() {
       const q = searchInput.value.trim();
@@ -551,6 +618,11 @@
 
         const deleteBtn = isAdminMode()
           ? `<button class="delete-btn" onclick="deleteAnnouncement('${escapeHtml(post.id || "")}')">🗑 Delete</button>`
+          : "";
+
+        const editPayload = escapeHtml(JSON.stringify(safePostForEdit(post)));
+        const editBtn = isAdminMode()
+          ? `<button class="edit-btn" data-post='${editPayload}'>✏ Edit</button>`
           : "";
 
         const isEvent = (post.is_event === true) || (!!post.event_start_date);
@@ -605,6 +677,7 @@
               <div class="btn-row">
                 ${linkBtn}
                 ${downloadBtn}
+                ${editBtn}
                 ${deleteBtn}
               </div>
             </div>
@@ -614,6 +687,16 @@
         div.style.opacity = 0;
         div.style.transition = "opacity 0.35s ease";
         postsContainer.appendChild(div);
+
+        const editButtonEl = div.querySelector(".edit-btn");
+        if (editButtonEl) {
+          editButtonEl.addEventListener("click", () => {
+            const raw = editButtonEl.getAttribute("data-post");
+            if (!raw) return;
+            editAnnouncement(JSON.parse(raw));
+          });
+        }
+
         setTimeout(() => { div.style.opacity = 1; }, 40);
       });
     }
