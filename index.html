@@ -208,6 +208,25 @@
       border-color: rgba(47,107,255,0.45);
     }
 
+    .delete-btn {
+      display: inline-block;
+      padding: 10px 14px;
+      background: rgba(255, 77, 79, 0.18);
+      border: 1px solid rgba(255, 77, 79, 0.35);
+      color: white;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .delete-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 77, 79, 0.28);
+      border-color: rgba(255, 77, 79, 0.5);
+    }
+
     .empty {
       padding: 18px;
       border-radius: var(--radius);
@@ -302,6 +321,53 @@
 
     // ====== STATE ======
     let allPosts = [];
+
+    const ADMIN_TOKEN_KEY = "elr_admin_delete_token";
+    const params = new URLSearchParams(window.location.search);
+    const adminTokenFromUrl = params.get("admin");
+
+    if (adminTokenFromUrl) {
+      localStorage.setItem(ADMIN_TOKEN_KEY, adminTokenFromUrl);
+      params.delete("admin");
+      const cleanUrl =
+        window.location.pathname +
+        (params.toString() ? "?" + params.toString() : "") +
+        window.location.hash;
+      window.history.replaceState({}, "", cleanUrl);
+    }
+
+    function getAdminToken() {
+      return localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+    }
+
+    function isAdminMode() {
+      return !!getAdminToken();
+    }
+
+    async function deleteAnnouncement(id) {
+      if (!confirm("Delete this announcement?")) return;
+
+      try {
+        const resp = await fetch("/.netlify/functions/delete-announcement", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + getAdminToken()
+          },
+          body: JSON.stringify({ id })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || "Delete failed");
+        }
+
+        location.reload();
+      } catch (err) {
+        alert(err.message || "Delete failed");
+      }
+    }
 
     // ====== UI ======
     const searchInput = document.getElementById("searchInput");
@@ -483,6 +549,10 @@
           ? `<a class="btn" href="${escapeHtml(post.link)}" target="_blank" rel="noopener">🔗 View Link</a>`
           : "";
 
+        const deleteBtn = isAdminMode()
+          ? `<button class="delete-btn" onclick="deleteAnnouncement('${escapeHtml(post.id || "")}')">🗑 Delete</button>`
+          : "";
+
         const isEvent = (post.is_event === true) || (!!post.event_start_date);
         const recurrence = (post.recurrence || "").trim();
 
@@ -535,6 +605,7 @@
               <div class="btn-row">
                 ${linkBtn}
                 ${downloadBtn}
+                ${deleteBtn}
               </div>
             </div>
           </div>
