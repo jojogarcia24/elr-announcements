@@ -246,6 +246,41 @@
       border-color: rgba(255, 193, 7, 0.48);
     }
 
+    .pin-btn {
+      display: inline-block;
+      padding: 10px 14px;
+      background: rgba(47, 107, 255, 0.16);
+      border: 1px solid rgba(47, 107, 255, 0.35);
+      color: white;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .pin-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(47, 107, 255, 0.24);
+      border-color: rgba(47, 107, 255, 0.48);
+    }
+
+    .pinned-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(47, 107, 255, 0.16);
+      border: 1px solid rgba(47, 107, 255, 0.32);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
     .empty {
       padding: 18px;
       border-radius: var(--radius);
@@ -427,6 +462,34 @@
       }
     }
 
+    async function togglePinAnnouncement(post) {
+      try {
+        const resp = await fetch("/.netlify/functions/edit-announcement", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + getAdminToken()
+          },
+          body: JSON.stringify({
+            id: post.id,
+            updates: {
+              pinned: !post.pinned
+            }
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.error || "Pin update failed");
+        }
+
+        location.reload();
+      } catch (err) {
+        alert("Pin update failed: " + (err.message || "Unknown error"));
+      }
+    }
+
     // ====== UI ======
     const searchInput = document.getElementById("searchInput");
     const channelFilter = document.getElementById("channelFilter");
@@ -593,6 +656,8 @@
         div.className = "post";
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
+        const pinnedBadge = post.pinned ? `<span class="badge secondary">PINNED</span>` : "";
+        const pinnedBanner = post.pinned ? `<div class="pinned-banner">📌 Pinned Announcement</div>` : "";
         const channel = normalizeChannel(post[CHANNEL_COLUMN]);
 
         const attachmentUrl = post.attachment_url || post.attachment || "";
@@ -619,6 +684,14 @@
               data-description="${escapeHtml(post.description || "")}"
               data-location="${escapeHtml(post.location || "")}"
             >✏ Edit</button>`
+          : "";
+
+        const pinBtn = isAdminMode()
+          ? `<button
+              class="pin-btn"
+              data-id="${escapeHtml(post.id || "")}"
+              data-pinned="${post.pinned ? "true" : "false"}"
+            >${post.pinned ? "📍 Unpin" : "📌 Pin"}</button>`
           : "";
 
         const isEvent = (post.is_event === true) || (!!post.event_start_date);
@@ -654,9 +727,11 @@
             </div>
 
             <div class="content-side">
+              ${pinnedBanner}
               <div class="title-row">
                 <h2>${escapeHtml(post.title || "")}</h2>
                 ${newBadge}
+                ${pinnedBadge}
                 ${recurrenceBadge}
               </div>
 
@@ -673,6 +748,7 @@
               <div class="btn-row">
                 ${linkBtn}
                 ${downloadBtn}
+                ${pinBtn}
                 ${editBtn}
                 ${deleteBtn}
               </div>
@@ -696,6 +772,16 @@
           });
         }
 
+        const pinButtonEl = div.querySelector(".pin-btn");
+        if (pinButtonEl) {
+          pinButtonEl.addEventListener("click", () => {
+            togglePinAnnouncement({
+              id: pinButtonEl.getAttribute("data-id") || "",
+              pinned: pinButtonEl.getAttribute("data-pinned") === "true"
+            });
+          });
+        }
+
         setTimeout(() => { div.style.opacity = 1; }, 40);
       });
     }
@@ -703,7 +789,7 @@
     // ====== FETCH ======
     async function loadPosts() {
       try {
-        const res = await fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*&order=created_at.desc`, {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/announcements?select=*&order=pinned.desc,created_at.desc`, {
           headers: {
             apikey: SUPABASE_ANON_KEY,
             Authorization: `Bearer ${SUPABASE_ANON_KEY}`
