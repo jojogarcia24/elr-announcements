@@ -433,6 +433,21 @@
       const newLocation = prompt("Edit location:", post.location || "");
       if (newLocation === null) return;
 
+      const publishPrompt = prompt(
+        "Schedule publish time (leave blank for immediate). Use format: 2026-03-16 07:00",
+        post.publish_at ? toPromptDateTime(post.publish_at) : ""
+      );
+      if (publishPrompt === null) return;
+
+      const expirePrompt = prompt(
+        "Expiration time (leave blank for no expiration). Use format: 2026-03-20 19:00",
+        post.expires_at ? toPromptDateTime(post.expires_at) : ""
+      );
+      if (expirePrompt === null) return;
+
+      const publishAt = normalizePromptDateTime(publishPrompt);
+      const expiresAt = normalizePromptDateTime(expirePrompt);
+
       try {
         const resp = await fetch("/.netlify/functions/edit-announcement", {
           method: "POST",
@@ -445,7 +460,9 @@
             updates: {
               title: newTitle,
               description: newDescription,
-              location: newLocation
+              location: newLocation,
+              publish_at: publishAt,
+              expires_at: expiresAt
             }
           })
         });
@@ -456,9 +473,11 @@
           throw new Error(data.error || "Edit failed");
         }
 
+        alert("Announcement updated successfully.");
         location.reload();
       } catch (err) {
-        alert(err.message || "Edit failed");
+        console.error("Edit error:", err);
+        alert("Edit failed: " + (err.message || "Unknown error"));
       }
     }
 
@@ -638,12 +657,62 @@
       return String(t).slice(0,5);
     }
 
+    function toPromptDateTime(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return "";
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      const hh = String(d.getHours()).padStart(2, "0");
+      const mi = String(d.getMinutes()).padStart(2, "0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${mi}`;
+    }
+
+    function normalizePromptDateTime(value) {
+      const v = String(value || "").trim();
+      if (!v) return null;
+      const normalized = v.replace(" ", "T");
+      const d = new Date(normalized);
+      if (isNaN(d.getTime())) {
+        alert("Invalid date/time format. Use YYYY-MM-DD HH:MM");
+        throw new Error("Invalid date/time format");
+      }
+      return d.toISOString();
+    }
+
+    function isScheduled(post) {
+      if (!post.publish_at) return false;
+      const d = new Date(post.publish_at);
+      if (isNaN(d.getTime())) return false;
+      return d.getTime() > Date.now();
+    }
+
+    function isExpired(post) {
+      if (!post.expires_at) return false;
+      const d = new Date(post.expires_at);
+      if (isNaN(d.getTime())) return false;
+      return d.getTime() <= Date.now();
+    }
+
+    function isVisiblePost(post) {
+      return !isScheduled(post) && !isExpired(post);
+    }
+
+    function formatDateTimeDisplay(value) {
+      if (!value) return "";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleString();
+    }
+
     // ====== RENDER ======
     function render() {
       const q = searchInput.value.trim();
       const selectedChannel = channelFilter.value;
 
-      const filtered = allPosts.filter(p => matchesSearch(p, q) && matchesChannel(p, selectedChannel));
+      const sourcePosts = isAdminMode() ? allPosts : allPosts.filter(isVisiblePost);
+      const filtered = sourcePosts.filter(p => matchesSearch(p, q) && matchesChannel(p, selectedChannel));
       postsContainer.innerHTML = "";
 
       if (!filtered.length) {
@@ -657,6 +726,8 @@
 
         const newBadge = isNewPost(post.date) ? `<span class="badge">NEW</span>` : "";
         const pinnedBadge = post.pinned ? `<span class="badge secondary">PINNED</span>` : "";
+        const scheduledBadge = isScheduled(post) ? `<span class="badge secondary">SCHEDULED</span>` : "";
+        const expiredBadge = isExpired(post) ? `<span class="badge secondary">EXPIRED</span>` : "";
         const pinnedBanner = post.pinned ? `<div class="pinned-banner">📌 Pinned Announcement</div>` : "";
         const channel = normalizeChannel(post[CHANNEL_COLUMN]);
 
@@ -683,6 +754,8 @@
               data-title="${escapeHtml(post.title || "")}"
               data-description="${escapeHtml(post.description || "")}"
               data-location="${escapeHtml(post.location || "")}"
+              data-publish-at="${escapeHtml(post.publish_at || "")}"
+              data-expires-at="${escapeHtml(post.expires_at || "")}"
             >✏ Edit</button>`
           : "";
 
@@ -732,11 +805,15 @@
                 <h2>${escapeHtml(post.title || "")}</h2>
                 ${newBadge}
                 ${pinnedBadge}
+                ${scheduledBadge}
+                ${expiredBadge}
                 ${recurrenceBadge}
               </div>
 
               <div class="meta">
                 ${post.date ? `<span>📅 ${escapeHtml(post.date)}</span>` : ``}
+                ${post.publish_at ? `<span>🕒 Publish: ${escapeHtml(formatDateTimeDisplay(post.publish_at))}</span>` : ``}
+                ${post.expires_at ? `<span>⌛ Expires: ${escapeHtml(formatDateTimeDisplay(post.expires_at))}</span>` : ``}
                 ${eventLine ? eventLine : ``}
                 ${post.location ? `<span>📍 ${escapeHtml(post.location)}</span>` : ``}
                 ${post.announcer ? `<span>👤 ${escapeHtml(post.announcer)}</span>` : ``}
@@ -767,7 +844,9 @@
               id: editButtonEl.getAttribute("data-id") || "",
               title: editButtonEl.getAttribute("data-title") || "",
               description: editButtonEl.getAttribute("data-description") || "",
-              location: editButtonEl.getAttribute("data-location") || ""
+              location: editButtonEl.getAttribute("data-location") || "",
+              publish_at: editButtonEl.getAttribute("data-publish-at") || "",
+              expires_at: editButtonEl.getAttribute("data-expires-at") || ""
             });
           });
         }
